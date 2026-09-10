@@ -4,215 +4,211 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 export default function Home() {
-  // -------------------------------------------------------
-  // STATE
-  // -------------------------------------------------------
+  // -------------------------------------------------------
+  // STATE
+  // -------------------------------------------------------
 
-  // Stores all todos
-  const [todos, setTodos] = useState([]);
+  // Stores all todos
+  const [todos, setTodos] = useState<any[]>([]);
 
-  // Stores the value entered in the input
-  const [newTodo, setNewTodo] = useState('');
+  // Stores the value entered in the input
+  const [newTodo, setNewTodo] = useState<any>('');
 
-  // Shows loading message
-  const [loading, setLoading] = useState(false);
+  // Shows loading message
+  const [loading, setLoading] = useState<any>(false);
 
-  // Stores error message
-  const [error, setError] = useState('');
+  // Stores error message
+  const [error, setError] = useState<any>('');
 
-  // -------------------------------------------------------
-  // GET TODOS
-  // -------------------------------------------------------
+  // -------------------------------------------------------
+  // GET TODOS
+  // -------------------------------------------------------
 
-  const getTodos = async () => {
-    try {
-      setLoading(true);
-      setError('');
+  const getTodos = async (): Promise<any> => {
+    try {
+      setLoading(true);
+      setError('');
 
-      // Send GET request to our API
-      const response = await axios.get('/api');
+      // Send GET request to our API
+      const response: any = await axios.get('/api');
 
-      // Axios automatically converts JSON into JavaScript
-      // and stores the result inside response.data
-      setTodos(response.data);
-    } catch (error) {
-      console.log(error);
+      // Axios automatically converts JSON into JavaScript
+      setTodos(response.data);
+    } catch (error: any) {
+      console.log(error);
+      setError('Failed to load todos.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      setError('Failed to load todos.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // -------------------------------------------------------
+  // ADD TODO
+  // -------------------------------------------------------
 
-  // -------------------------------------------------------
-  // ADD TODO
-  // -------------------------------------------------------
+  const addTodo = async (event: any): Promise<any> => {
+    // Prevent page refresh
+    event.preventDefault();
 
-  const addTodo = async (event) => {
-    // Prevent page refresh
-    event.preventDefault();
+    // Don't add an empty todo
+    if (!newTodo.trim()) {
+      return;
+    }
 
-    // Don't add an empty todo
-    if (!newTodo.trim()) {
-      return;
-    }
+    try {
+      setError('');
 
-    try {
-      setError('');
+      // Send POST request
+      const response: any = await axios.post('/api', {
+        title: newTodo,
+      });
 
-      // Send POST request
-      const response = await axios.post('/api', {
-        title: newTodo,
-      });
+      // Add the new todo to the existing list
+      setTodos((currentTodos: any[]) => [response.data, ...currentTodos]);
 
-      // Add the new todo to the existing list
-      setTodos((currentTodos) => [response.data, ...currentTodos]);
+      // Clear input
+      setNewTodo('');
+    } catch (error: any) {
+      console.log(error);
+      setError('Failed to add todo.');
+    }
+  };
 
-      // Clear input
-      setNewTodo('');
-    } catch (error) {
-      console.log(error);
+  // -------------------------------------------------------
+  // UPDATE TODO
+  // -------------------------------------------------------
 
-      setError('Failed to add todo.');
-    }
-  };
+  const toggleTodo = async (todo: any): Promise<any> => {
+    try {
+      setError('');
 
-  // -------------------------------------------------------
-  // UPDATE TODO
-  // -------------------------------------------------------
+      // Send PATCH request
+      // ID is passed as a query parameter
+      // /api?id=1
 
-  const toggleTodo = async (todo) => {
-    try {
-      setError('');
+      const response: any = await axios.patch(`/api?id=${todo.id}`, {
+        completed: !todo.completed,
+      });
 
-      // Send PATCH request
-      //
-      // The ID is passed as a query parameter
-      //
-      // /api?id=1
-      //
-      const response = await axios.patch(`/api?id=${todo.id}`, {
-        completed: !todo.completed,
-      });
+      // Update the todo in our local state
+      setTodos((currentTodos: any[]) =>
+        currentTodos.map((item: any) =>
+          item.id === todo.id ? response.data : item
+        )
+      );
+    } catch (error: any) {
+      console.log(error);
+      setError('Failed to update todo.');
+    }
+  };
 
-      // Update the todo in our local state
-      setTodos((currentTodos) =>
-        currentTodos.map((item) => (item.id === todo.id ? response.data : item))
-      );
-    } catch (error) {
-      console.log(error);
+  // -------------------------------------------------------
+  // DELETE TODO
+  // -------------------------------------------------------
 
-      setError('Failed to update todo.');
-    }
-  };
+  const deleteTodo = async (id: any): Promise<any> => {
+    try {
+      setError('');
 
-  // -------------------------------------------------------
-  // DELETE TODO
-  // -------------------------------------------------------
+      // Send DELETE request
+      // /api?id=1
 
-  const deleteTodo = async (id) => {
-    try {
-      setError('');
+      await axios.delete(`/api?id=${id}`);
 
-      // Send DELETE request
-      //
-      // /api?id=1
-      //
-      await axios.delete(`/api?id=${id}`);
+      // Remove the todo from local state
+      setTodos((currentTodos: any[]) =>
+        currentTodos.filter((todo: any) => todo.id !== id)
+      );
+    } catch (error: any) {
+      console.log(error);
+      setError('Failed to delete todo.');
+    }
+  };
 
-      // Remove the todo from local state
-      setTodos((currentTodos) => currentTodos.filter((todo) => todo.id !== id));
-    } catch (error) {
-      console.log(error);
+  // -------------------------------------------------------
+  // LOAD TODOS WHEN PAGE OPENS
+  // -------------------------------------------------------
 
-      setError('Failed to delete todo.');
-    }
-  };
+  useEffect(() => {
+    getTodos();
+  }, []);
 
-  // -------------------------------------------------------
-  // LOAD TODOS WHEN PAGE OPENS
-  // -------------------------------------------------------
+  // -------------------------------------------------------
+  // UI
+  // -------------------------------------------------------
 
-  useEffect(() => {
-    getTodos();
-  }, []);
+  return (
+    <main className="min-h-screen bg-gray-100 p-6">
+      <div className="mx-auto max-w-2xl">
+        {/* Page title */}
+        <h1 className="mb-6 text-3xl font-bold">Todo App</h1>
 
-  // -------------------------------------------------------
-  // UI
-  // -------------------------------------------------------
+        {/* Add Todo Form */}
+        <form onSubmit={addTodo} className="mb-6 flex gap-2">
+          {/* Input */}
+          <input
+            type="text"
+            value={newTodo}
+            onChange={(event: any) => setNewTodo(event.target.value)}
+            placeholder="Enter a todo..."
+            className="flex-1 rounded border bg-white px-4 py-2"
+          />
 
-  return (
-    <main className="min-h-screen bg-gray-100 p-6">
-      <div className="mx-auto max-w-2xl">
-        {/* Page title */}
-        <h1 className="mb-6 text-3xl font-bold">Todo App</h1>
+          {/* Add button */}
+          <button
+            type="submit"
+            className="rounded bg-black px-5 py-2 text-white"
+          >
+            Add
+          </button>
+        </form>
 
-        {/* Add Todo Form */}
-        <form onSubmit={addTodo} className="mb-6 flex gap-2">
-          {/* Input */}
-          <input
-            type="text"
-            value={newTodo}
-            onChange={(event) => setNewTodo(event.target.value)}
-            placeholder="Enter a todo..."
-            className="flex-1 rounded border bg-white px-4 py-2"
-          />
+        {/* Error */}
+        {error && (
+          <p className="mb-4 rounded bg-red-100 p-3 text-red-700">{error}</p>
+        )}
 
-          {/* Add button */}
-          <button
-            type="submit"
-            className="rounded bg-black px-5 py-2 text-white"
-          >
-            Add
-          </button>
-        </form>
+        {/* Loading */}
+        {loading && <p className="mb-4 text-gray-500">Loading...</p>}
 
-        {/* Error */}
-        {error && (
-          <p className="mb-4 rounded bg-red-100 p-3 text-red-700">{error}</p>
-        )}
+        {/* Todo List */}
+        <div className="space-y-3">
+          {todos.map((todo: any) => (
+            <div
+              key={todo.id}
+              className="flex items-center justify-between rounded border bg-white p-4"
+            >
+              {/* Checkbox + Todo title */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={() => toggleTodo(todo)}
+                />
 
-        {/* Loading */}
-        {loading && <p className="mb-4 text-gray-500">Loading...</p>}
+                <span
+                  className={todo.completed ? 'text-gray-400 line-through' : ''}
+                >
+                  {todo.title}
+                </span>
+              </div>
 
-        {/* Todo List */}
-        <div className="space-y-3">
-          {todos.map((todo) => (
-            <div
-              key={todo.id}
-              className="flex items-center justify-between rounded border bg-white p-4"
-            >
-              {/* Checkbox + Todo title */}
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={todo.completed}
-                  onChange={() => toggleTodo(todo)}
-                />
+              {/* Delete button */}
+              <button
+                onClick={() => deleteTodo(todo.id)}
+                className="text-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
 
-                <span
-                  className={todo.completed ? 'text-gray-400 line-through' : ''}
-                >
-                  {todo.title}
-                </span>
-              </div>
-
-              {/* Delete button */}
-              <button
-                onClick={() => deleteTodo(todo.id)}
-                className="text-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-
-          {/* No todos */}
-          {!loading && todos.length === 0 && (
-            <p className="py-8 text-center text-gray-500">No todos found.</p>
-          )}
-        </div>
-      </div>
-    </main>
-  );
+          {/* No todos */}
+          {!loading && todos.length === 0 && (
+            <p className="py-8 text-center text-gray-500">No todos found.</p>
+          )}
+        </div>
+      </div>
+    </main>
+  );
 }
