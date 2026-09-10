@@ -135,5 +135,3 @@ let todos = [
   
     return Response.json(deletedTodo[0]);
   }
-  Message materials
-  
