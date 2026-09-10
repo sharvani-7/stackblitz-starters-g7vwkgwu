@@ -78,7 +78,7 @@ let todos = [
   
     // Create a new todo
     const newTodo = {
-      id: Date.now(),
+      id: Date.now(),
       title: data.title,
       completed: false,
     };
